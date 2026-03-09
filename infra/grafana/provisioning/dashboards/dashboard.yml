@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'Silent Disco'
+    orgId: 1
+    folder: 'Silent Disco'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

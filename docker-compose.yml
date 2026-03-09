@@ -1,0 +1,210 @@
+###############################################################################
+# Silent Disco Platform — Local Development Stack
+#
+# Services:
+#   icecast   — Audio streaming server (Ogg/Opus + MP3)
+#   nginx     — RTMP ingest + HLS packaging
+#   ffmpeg    — Test-tone encoder workers (4 channels)
+#   api       — Standalone REST/SSE API
+#   postgres  — PostgreSQL database
+#   prometheus — Metrics scraping
+#   grafana   — Metrics dashboard
+#   web       — Next.js frontend (optional; prefer npm run dev locally)
+#
+# Quick start:
+#   cp .env.example .env
+#   docker compose up
+#
+# Then open: http://localhost:3000
+###############################################################################
+
+version: "3.9"
+
+networks:
+  disco:
+    driver: bridge
+
+volumes:
+  icecast-logs:
+  hls-segments:
+  postgres-data:
+  prometheus-data:
+  grafana-data:
+
+services:
+
+  # ─── PostgreSQL database ────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: sd-postgres
+    networks: [disco]
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: silentdisco
+      POSTGRES_USER: ${POSTGRES_USER:-disco}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-discopass}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./services/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-disco} -d silentdisco"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ─── Icecast streaming server ──────────────────────────────
+  icecast:
+    build: ./services/streaming/icecast
+    container_name: sd-icecast
+    networks: [disco]
+    ports:
+      - "8000:8000"
+    environment:
+      HOSTNAME: ${ICECAST_HOSTNAME:-localhost}
+      ICECAST_SOURCE_PASSWORD: ${ICECAST_SOURCE_PASSWORD:-hackme}
+      ICECAST_RELAY_PASSWORD: ${ICECAST_RELAY_PASSWORD:-hackme}
+      ICECAST_ADMIN_PASSWORD: ${ICECAST_ADMIN_PASSWORD:-hackme}
+    volumes:
+      - icecast-logs:/var/log/icecast2
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/status-json.xsl"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # ─── NGINX-RTMP (ingest + HLS delivery) ───────────────────
+  nginx:
+    build: ./services/streaming/rtmp
+    container_name: sd-nginx
+    networks: [disco]
+    ports:
+      - "1935:1935"   # RTMP ingest
+      - "8080:8080"   # HLS HTTP delivery
+    volumes:
+      - hls-segments:/tmp/hls
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # ─── FFmpeg encoder workers ────────────────────────────────
+  ffmpeg:
+    build: ./services/streaming/ffmpeg
+    container_name: sd-ffmpeg
+    networks: [disco]
+    depends_on:
+      icecast:
+        condition: service_healthy
+    environment:
+      INPUT_TYPE: ${FFMPEG_INPUT_TYPE:-test}
+      ICECAST_HOST: icecast
+      ICECAST_PORT: 8000
+      ICECAST_SOURCE_PASS: ${ICECAST_SOURCE_PASSWORD:-hackme}
+      AUDIO_BITRATE: ${AUDIO_BITRATE:-128}
+      ALSA_CH1: ${ALSA_CH1:-hw:0,0}
+      ALSA_CH2: ${ALSA_CH2:-hw:0,1}
+      ALSA_CH3: ${ALSA_CH3:-hw:1,0}
+      ALSA_CH4: ${ALSA_CH4:-hw:1,1}
+    restart: unless-stopped
+
+  # ─── REST / SSE API ────────────────────────────────────────
+  api:
+    build: ./services/api
+    container_name: sd-api
+    networks: [disco]
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      NODE_ENV: development
+      ICECAST_URL: http://icecast:8000
+      STREAMING_BASE_URL: ${STREAMING_BASE_URL:-http://localhost:8000}
+      EVENT_ID: ${EVENT_ID:-demo}
+      EVENT_NAME: ${EVENT_NAME:-Silent Disco}
+      EVENT_VENUE: ${EVENT_VENUE:-}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-*}
+      ANALYTICS_ENDPOINT: ${ANALYTICS_ENDPOINT:-}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-disco}:${POSTGRES_PASSWORD:-discopass}@postgres:5432/silentdisco
+    depends_on:
+      icecast:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ─── Prometheus metrics ─────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: sd-prometheus
+    networks: [disco]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+
+  # ─── Grafana dashboards ──────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: sd-grafana
+    networks: [disco]
+    ports:
+      - "3002:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-grafanapass}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s:%(http_port)s/"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # ─── Next.js web app (optional — use npm dev for hot reload) ─
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: ../../infra/docker/web.Dockerfile
+    container_name: sd-web
+    networks: [disco]
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_EVENT_ID: ${EVENT_ID:-demo}
+      NEXT_PUBLIC_EVENT_NAME: ${EVENT_NAME:-Silent Disco}
+      NEXT_PUBLIC_EVENT_VENUE: ${EVENT_VENUE:-}
+      NEXT_PUBLIC_STREAMING_BASE_URL: ${STREAMING_BASE_URL:-http://localhost:8000}
+      API_INTERNAL_URL: http://api:3001
+      ICECAST_STATS_URL: http://icecast:8000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-disco}:${POSTGRES_PASSWORD:-discopass}@postgres:5432/silentdisco
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
+    depends_on:
+      api:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles: ["full"]

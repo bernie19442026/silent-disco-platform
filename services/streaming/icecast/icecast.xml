@@ -1,0 +1,148 @@
+<?xml version="1.0"?>
+<!--
+  Icecast2 configuration for Silent Disco Platform
+  ─────────────────────────────────────────────────
+  Serves four Ogg/Opus audio streams on mount points /channel1–4.ogg
+  and four MP3 streams as fallback.
+
+  Override sensitive values via environment variables in Docker.
+-->
+<icecast>
+  <!-- ─── Network ──────────────────────────────────────── -->
+  <hostname>__HOSTNAME__</hostname>    <!-- set to your public IP or domain -->
+  <location>Earth</location>
+  <admin>admin@silentdisco.example</admin>
+
+  <limits>
+    <clients>15000</clients>           <!-- max concurrent listeners -->
+    <sources>16</sources>              <!-- max source connections -->
+    <queue-size>524288</queue-size>    <!-- 512 KiB per-client queue -->
+    <client-timeout>30</client-timeout>
+    <header-timeout>15</header-timeout>
+    <source-timeout>10</source-timeout>
+    <burst-on-connect>1</burst-on-connect>
+    <burst-size>65536</burst-size>     <!-- 64 KiB initial burst -->
+  </limits>
+
+  <!-- ─── Authentication ──────────────────────────────── -->
+  <authentication>
+    <!-- source clients authenticate with source password -->
+    <source-password>__SOURCE_PASSWORD__</source-password>
+    <!-- relay connections -->
+    <relay-password>__RELAY_PASSWORD__</relay-password>
+    <!-- web admin interface -->
+    <admin-user>admin</admin-user>
+    <admin-password>__ADMIN_PASSWORD__</admin-password>
+  </authentication>
+
+  <!-- ─── Ports ────────────────────────────────────────── -->
+  <listen-socket>
+    <port>8000</port>
+    <bind-address>0.0.0.0</bind-address>
+  </listen-socket>
+
+  <!-- ─── Mount points (Opus/Ogg) ─────────────────────── -->
+
+  <mount type="normal">
+    <mount-name>/channel1.ogg</mount-name>
+    <fallback-mount>/silence.ogg</fallback-mount>
+    <fallback-override>1</fallback-override>
+    <max-listeners>5000</max-listeners>
+    <stream-name>Silent Disco – Main Mix</stream-name>
+    <stream-description>Full front-of-house mix</stream-description>
+    <genre>Live</genre>
+    <bitrate>128</bitrate>
+    <type>audio/ogg</type>
+    <subtype>vorbis</subtype>
+    <hidden>0</hidden>
+  </mount>
+
+  <mount type="normal">
+    <mount-name>/channel2.ogg</mount-name>
+    <fallback-mount>/silence.ogg</fallback-mount>
+    <fallback-override>1</fallback-override>
+    <max-listeners>5000</max-listeners>
+    <stream-name>Silent Disco – DJ Booth</stream-name>
+    <stream-description>Direct DJ monitor feed</stream-description>
+    <genre>Live</genre>
+    <bitrate>128</bitrate>
+    <type>audio/ogg</type>
+  </mount>
+
+  <mount type="normal">
+    <mount-name>/channel3.ogg</mount-name>
+    <fallback-mount>/silence.ogg</fallback-mount>
+    <fallback-override>1</fallback-override>
+    <max-listeners>5000</max-listeners>
+    <stream-name>Silent Disco – Stage Feed</stream-name>
+    <stream-description>Stage monitor &amp; instrument mix</stream-description>
+    <genre>Live</genre>
+    <bitrate>128</bitrate>
+    <type>audio/ogg</type>
+  </mount>
+
+  <mount type="normal">
+    <mount-name>/channel4.ogg</mount-name>
+    <fallback-mount>/silence.ogg</fallback-mount>
+    <fallback-override>1</fallback-override>
+    <max-listeners>5000</max-listeners>
+    <stream-name>Silent Disco – Crowd Mix</stream-name>
+    <stream-description>Ambient crowd &amp; atmosphere</stream-description>
+    <genre>Live</genre>
+    <bitrate>128</bitrate>
+    <type>audio/ogg</type>
+  </mount>
+
+  <!-- ─── Mount points (MP3 fallback) ─────────────────── -->
+
+  <mount type="normal">
+    <mount-name>/channel1.mp3</mount-name>
+    <max-listeners>3000</max-listeners>
+    <stream-name>Silent Disco – Main Mix (MP3)</stream-name>
+    <bitrate>128</bitrate>
+    <type>audio/mpeg</type>
+  </mount>
+
+  <mount type="normal">
+    <mount-name>/channel2.mp3</mount-name>
+    <max-listeners>3000</max-listeners>
+    <bitrate>128</bitrate>
+    <type>audio/mpeg</type>
+  </mount>
+
+  <mount type="normal">
+    <mount-name>/channel3.mp3</mount-name>
+    <max-listeners>3000</max-listeners>
+    <bitrate>128</bitrate>
+    <type>audio/mpeg</type>
+  </mount>
+
+  <mount type="normal">
+    <mount-name>/channel4.mp3</mount-name>
+    <max-listeners>3000</max-listeners>
+    <bitrate>128</bitrate>
+    <type>audio/mpeg</type>
+  </mount>
+
+  <!-- ─── Paths ────────────────────────────────────────── -->
+  <paths>
+    <basedir>/usr/share/icecast2</basedir>
+    <logdir>/var/log/icecast2</logdir>
+    <webroot>/usr/share/icecast2/web</webroot>
+    <adminroot>/usr/share/icecast2/admin</adminroot>
+    <alias source="/" destination="/status.xsl"/>
+  </paths>
+
+  <!-- ─── Logging ──────────────────────────────────────── -->
+  <logging>
+    <accesslog>access.log</accesslog>
+    <errorlog>error.log</errorlog>
+    <loglevel>3</loglevel>       <!-- 1=error 2=warn 3=info 4=debug -->
+    <logsize>10240</logsize>     <!-- rotate at 10 MB -->
+  </logging>
+
+  <!-- ─── Security ─────────────────────────────────────── -->
+  <security>
+    <chroot>0</chroot>
+  </security>
+</icecast>
