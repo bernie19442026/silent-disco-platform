@@ -13,7 +13,7 @@ import type { Event } from '../lib/types';
 
 const FALLBACK_EVENT: Event = {
   id: process.env.NEXT_PUBLIC_EVENT_ID ?? 'demo',
-  name: process.env.NEXT_PUBLIC_EVENT_NAME ?? 'Silent Disco',
+  name: process.env.NEXT_PUBLIC_EVENT_NAME ?? 'Signal Disco',
   venue: process.env.NEXT_PUBLIC_EVENT_VENUE ?? undefined,
   isLive: true,
   totalListeners: 0,
@@ -110,7 +110,7 @@ export default async function HomePage() {
         </Suspense>
 
         <footer className="mt-auto pt-8 text-center text-white/20 text-xs flex items-center justify-center gap-4">
-          <span>Silent Disco Platform · Powered by Opus</span>
+          <span>Signal Disco · Powered by Opus</span>
           <QRCodeButton />
         </footer>
       </div>

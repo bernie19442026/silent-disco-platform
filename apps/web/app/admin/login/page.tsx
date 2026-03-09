@@ -42,7 +42,7 @@ export default function AdminLoginPage() {
         <div className="text-center mb-8">
           <div className="text-4xl mb-3">🎧</div>
           <h1 className="text-2xl font-bold text-white">Admin Panel</h1>
-          <p className="text-white/40 text-sm mt-1">Silent Disco Platform</p>
+          <p className="text-white/40 text-sm mt-1">Signal Disco Platform</p>
         </div>
 
         <form
@@ -97,7 +97,7 @@ export default function AdminLoginPage() {
         </form>
 
         <p className="text-center text-white/20 text-xs mt-6">
-          Silent Disco Platform · Admin Access
+          Signal Disco Platform · Admin Access
         </p>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
-const APP_NAME = process.env.NEXT_PUBLIC_EVENT_NAME ?? 'Silent Disco';
+const APP_NAME = process.env.NEXT_PUBLIC_EVENT_NAME ?? 'Signal Disco';
 
 export const metadata: Metadata = {
   title: APP_NAME,

@@ -1,4 +1,11 @@
 {
-  "buildCommand": "next build",
-  "outputDirectory": ".next"
+  "name": "silent-disco",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_EVENT_NAME": "Signal Disco",
+    "NEXT_PUBLIC_EVENT_ID": "demo",
+    "NEXT_PUBLIC_STREAMING_BASE_URL": ""
+  }
 }

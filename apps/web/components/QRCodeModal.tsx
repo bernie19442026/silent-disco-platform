@@ -67,13 +67,13 @@ export function QRCodeButton({ url }: Props) {
             ref={modalRef}
             className="bg-[#0f1018] border border-white/15 rounded-2xl p-6 text-center max-w-xs w-full"
           >
-            <h2 className="text-lg font-bold text-white mb-1">Join the Disco</h2>
+            <h2 className="text-lg font-bold text-white mb-1">Join Signal Disco</h2>
             <p className="text-white/40 text-xs mb-5">Scan to listen on your phone</p>
 
             {qrDataUrl ? (
               <img
                 src={qrDataUrl}
-                alt="QR code to join Silent Disco"
+                alt="QR code to join Signal Disco"
                 className="w-48 h-48 mx-auto rounded-xl"
               />
             ) : (

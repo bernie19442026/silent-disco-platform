@@ -3,7 +3,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 
 const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'silent-disco-dev-secret-change-in-production'
+  process.env.JWT_SECRET ?? 'signal-disco-dev-secret-change-in-production'
 );
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME ?? 'admin';

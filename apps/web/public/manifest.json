@@ -1,6 +1,6 @@
 {
-  "name": "Silent Disco",
-  "short_name": "Silent Disco",
+  "name": "Signal Disco",
+  "short_name": "Signal Disco",
   "description": "Live multi-channel audio streaming",
   "start_url": "/",
   "display": "standalone",
