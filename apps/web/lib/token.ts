@@ -6,7 +6,7 @@
 import { jwtVerify } from 'jose';
 
 const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'silent-disco-dev-secret-change-in-production'
+  process.env.JWT_SECRET ?? 'signal-disco-dev-secret-change-in-production'
 );
 
 export async function verifyTokenEdge(token: string): Promise<{ sub: string; role: string } | null> {
